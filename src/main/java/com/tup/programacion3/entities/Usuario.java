@@ -1,11 +1,13 @@
 package com.tup.programacion3.entities;
 
 import com.tup.programacion3.enums.Rol;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.util.HashSet;
 import java.util.Set;
 
+@Entity
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,8 +22,12 @@ public class Usuario extends Base {
     private String mail;
     private String celular;
     private String contraseña;
+
+    @Enumerated(EnumType.STRING)
     private Rol rol;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "usuario_id")
     @Builder.Default
     private Set<Pedido> pedidos = new HashSet<>();
 

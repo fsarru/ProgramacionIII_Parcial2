@@ -1,8 +1,10 @@
 package com.tup.programacion3.entities;
 
+import jakarta.persistence.Entity;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+@Entity
 @Getter
 @Setter
 @NoArgsConstructor

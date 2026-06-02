@@ -1,147 +1,305 @@
 package com.tup.programacion3;
 
-import com.tup.programacion3.entities.*;
-import com.tup.programacion3.enums.Estado;
-import com.tup.programacion3.enums.FormaPago;
-import com.tup.programacion3.enums.Rol;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
+import com.tup.programacion3.entities.Categoria;
+import com.tup.programacion3.entities.Producto;
+import com.tup.programacion3.repository.CategoriaRepository;
+import com.tup.programacion3.repository.ProductoRepository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
 
 public class Main {
+
+    private static final CategoriaRepository categoriaRepository = new CategoriaRepository();
+    private static final ProductoRepository productoRepository = new ProductoRepository();
+    private static final Scanner scanner = new Scanner(System.in);
+
     public static void main(String[] args) {
+        int opcion;
+        do {
+            System.out.println("\n========== MENÚ PRINCIPAL - TIENDA VIRTUAL ==========");
+            System.out.println("1. Gestionar Categorías (ABM)");
+            System.out.println("2. Gestionar Productos (ABM)");
+            System.out.println("3. Reporte: Listar productos por categoría (HU-09)");
+            System.out.println("0. Salir del Sistema");
+            System.out.print("Seleccione una opción: ");
 
-        // Inicializamos el EntityManager
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("miUnidad");
-        EntityManager em = emf.createEntityManager();
+            try {
+                opcion = Integer.parseInt(scanner.nextLine());
+                switch (opcion) {
+                    case 1: menuCategorias(); break;
+                    case 2: menuProductos(); break;
+                    case 3: reporteProductosPorCategoria(); break;
+                    case 0: System.out.println("¡Gracias por utilizar el sistema!"); break;
+                    default: System.out.println("Opción inválida. Intente nuevamente.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Por favor, ingrese un número válido.");
+                opcion = -1;
+            }
+        } while (opcion != 0);
+    }
 
-        try {
-            em.getTransaction().begin();
+    // ==========================================
+    // SECCIÓN GESTIÓN DE CATEGORÍAS (ABM)
+    // ==========================================
+    private static void menuCategorias() {
+        int opcion;
+        do {
+            System.out.println("\n--- GESTIÓN DE CATEGORÍAS ---");
+            System.out.println("1. Registrar nueva Categoría (Alta)");
+            System.out.println("2. Listar Categorías activas");
+            System.out.println("3. Modificar una Categoría");
+            System.out.println("4. Dar de baja una Categoría (Baja Lógica)");
+            System.out.println("0. Volver al Menú Principal");
+            System.out.print("Seleccione una opción: ");
 
-            // ====================================================================
-            // PUNTO 4.c y 4.d: Instanciar 3 Categorías y 10 Productos
-            // ====================================================================
+            try {
+                opcion = Integer.parseInt(scanner.nextLine());
+                switch (opcion) {
+                    case 1: altaCategoria(); break;
+                    case 2: listarCategorias(); break;
+                    case 3: modificacionCategoria(); break;
+                    case 4: bajaCategoria(); break;
+                    case 0: break;
+                    default: System.out.println("Opción inválida.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Ingrese un número.");
+                opcion = -1;
+            }
+        } while (opcion != 0);
+    }
 
-            Categoria catHardware = Categoria.builder().nombre("Hardware").descripcion("Componentes para programación").build();
-            Producto p1 = Producto.builder().nombre("AMD Ryzen 5 7600").precio(250000.0).stock(10).build();
-            Producto p2 = Producto.builder().nombre("Motherboard ASUS B650M-A").precio(150000.0).stock(5).build();
-            Producto p3 = Producto.builder().nombre("Memoria RAM DDR5 32GB").precio(120000.0).stock(15).build();
-            catHardware.addProducto(p1);
-            catHardware.addProducto(p2);
-            catHardware.addProducto(p3);
+    private static void altaCategoria() {
+        System.out.println("\n[Alta de Categoría]");
+        System.out.print("Ingrese nombre de la categoría: ");
+        String nombre = scanner.nextLine();
+        System.out.print("Ingrese descripción de la categoría: ");
+        String descripcion = scanner.nextLine();
 
-            Categoria catJuegos = Categoria.builder().nombre("Suscripciones").descripcion("PlayStation y Digitales").build();
-            Producto p4 = Producto.builder().nombre("Suscripción PlayStation Plus").precio(80000.0).stock(100).build();
-            Producto p5 = Producto.builder().nombre("Juego PS5 Digital").precio(70000.0).stock(50).build();
-            Producto p6 = Producto.builder().nombre("Tarjeta de Regalo PS Store").precio(20000.0).stock(200).build();
-            catJuegos.addProducto(p4);
-            catJuegos.addProducto(p5);
-            catJuegos.addProducto(p6);
+        Categoria nueva = new Categoria();
+        nueva.setNombre(nombre);
+        nueva.setDescripcion(descripcion);
 
-            Categoria catSuper = Categoria.builder().nombre("Alimentos").descripcion("Compras de supermercado").build();
-            Producto p7 = Producto.builder().nombre("Yerba Mate 1Kg").precio(4500.0).stock(50).build();
-            Producto p8 = Producto.builder().nombre("Costillar para Asado").precio(15000.0).stock(10).build();
-            Producto p9 = Producto.builder().nombre("Bolsa de Carbón").precio(2500.0).stock(30).build();
-            Producto p10 = Producto.builder().nombre("Fardo de Leña").precio(3500.0).stock(20).build(); // Este lo borraremos luego
-            catSuper.addProducto(p7);
-            catSuper.addProducto(p8);
-            catSuper.addProducto(p9);
-            catSuper.addProducto(p10);
+        categoriaRepository.guardar(nueva);
+        System.out.println("¡Categoría guardada con éxito!");
+    }
 
-            // Al persistir las categorías, por el CascadeType.ALL se persisten automáticamente sus productos
-            em.persist(catHardware);
-            em.persist(catJuegos);
-            em.persist(catSuper);
+    private static void listarCategorias() {
+        System.out.println("\n[Listado de Categorías Activas]");
+        List<Categoria> activas = categoriaRepository.listarActivos();
+        if (activas.isEmpty()) {
+            System.out.println("No hay categorías activas registradas.");
+        } else {
+            for (Categoria cat : activas) {
+                System.out.printf("ID: %d | Nombre: %s | Descripción: %s\n", cat.getId(), cat.getNombre(), cat.getDescripcion());
+            }
+        }
+    }
 
+    private static void modificacionCategoria() {
+        System.out.println("\n[Modificación de Categoría]");
+        System.out.print("Ingrese el ID de la categoría a modificar: ");
+        Long id = Long.parseLong(scanner.nextLine());
 
-            // ====================================================================
-            // PUNTO 4.a y 4.b: Instanciar 2 Usuarios y 3 Pedidos (con 2 detalles c/u)
-            // ====================================================================
+        Optional<Categoria> opt = categoriaRepository.buscarPorId(id);
+        if (opt.isEmpty() || opt.get().isEliminado()) {
+            System.out.println("Error: La categoría no existe o se encuentra dada de baja.");
+            return;
+        }
 
-            Usuario usuario1 = Usuario.builder()
-                    .nombre("Franco").apellido("Sarrú").mail("franco.sarru@mail.com")
-                    .celular("3411234567").contraseña("pass123").rol(Rol.ADMIN)
-                    .build();
+        Categoria cat = opt.get();
+        System.out.print("Nuevo nombre (actual: " + cat.getNombre() + "): ");
+        String nombre = scanner.nextLine();
+        System.out.print("Nueva descripción (actual: " + cat.getDescripcion() + "): ");
+        String descripcion = scanner.nextLine();
 
-            Usuario usuario2 = Usuario.builder()
-                    .nombre("Walter").apellido("Sarrú").mail("walter@mail.com")
-                    .celular("3419876543").contraseña("pass456").rol(Rol.USUARIO)
-                    .build();
+        if (!nombre.trim().isEmpty()) cat.setNombre(nombre);
+        if (!descripcion.trim().isEmpty()) cat.setDescripcion(descripcion);
 
-            // Pedido 1 (Para Franco)
-            Pedido pedido1 = Pedido.builder().estado(Estado.CONFIRMADO).formaPago(FormaPago.TARJETA).build();
-            pedido1.addDetallePedido(1, p1); // 1 Procesador
-            pedido1.addDetallePedido(1, p2); // 1 Motherboard
-            usuario1.addPedido(pedido1);
+        categoriaRepository.guardar(cat);
+        System.out.println("¡Categoría actualizada con éxito!");
+    }
 
-            // Pedido 2 (Para Franco)
-            Pedido pedido2 = Pedido.builder().estado(Estado.TERMINADO).formaPago(FormaPago.TRANSFERENCIA).build();
-            pedido2.addDetallePedido(2, p7); // 2 de Yerba Mate
-            pedido2.addDetallePedido(1, p4); // 1 Suscripción PS Plus
-            usuario1.addPedido(pedido2);
+    private static void bajaCategoria() {
+        System.out.println("\n[Baja Lógica de Categoría]");
+        System.out.print("Ingrese el ID de la categoría a dar de baja: ");
+        Long id = Long.parseLong(scanner.nextLine());
 
-            // Pedido 3 (Para Walter)
-            Pedido pedido3 = Pedido.builder().estado(Estado.PENDIENTE).formaPago(FormaPago.EFECTIVO).build();
-            pedido3.addDetallePedido(3, p8); // 3 Costillares
-            pedido3.addDetallePedido(2, p9); // 2 Bolsas de carbón
-            usuario2.addPedido(pedido3);
+        Optional<Categoria> opt = categoriaRepository.buscarPorId(id);
+        if (opt.isEmpty() || opt.get().isEliminado()) {
+            System.out.println("Error: El ID especificado no existe o ya está dado de baja.");
+            return;
+        }
 
-            // Persistimos los usuarios (por CascadeType.ALL se guardan sus pedidos y los detalles)
-            em.persist(usuario1);
-            em.persist(usuario2);
+        String nombreAfectado = opt.get().getNombre();
+        categoriaRepository.eliminarLogico(id);
+        System.out.println("Confirmación: La categoría '" + nombreAfectado + "' ha sido dada de baja correctamente.");
+    }
 
-            // Forzamos la sincronización con la base de datos para que asigne todos los IDs
-            em.flush();
+    // ==========================================
+    // SECCIÓN GESTIÓN DE PRODUCTOS (ABM)
+    // ==========================================
+    private static void menuProductos() {
+        int opcion;
+        do {
+            System.out.println("\n--- GESTIÓN DE PRODUCTOS ---");
+            System.out.println("1. Registrar nuevo Producto (Alta)");
+            System.out.println("2. Listar Productos activos");
+            System.out.println("3. Modificar un Producto");
+            System.out.println("4. Dar de baja un Producto (HU-08 - Baja Lógica)");
+            System.out.print("Seleccione una opción: ");
 
-            System.out.println("--- Se persistieron usuarios, pedidos, categorías y productos con éxito ---");
+            try {
+                opcion = Integer.parseInt(scanner.nextLine());
+                switch (opcion) {
+                    case 1: altaProducto(); break;
+                    case 2: listarProductos(); break;
+                    case 3: modificacionProducto(); break;
+                    case 4: bajaProducto(); break;
+                    case 0: break;
+                    default: System.out.println("Opción inválida.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Error: Ingrese un número.");
+                opcion = -1;
+            }
+        } while (opcion != 0);
+    }
 
+    private static void altaProducto() {
+        System.out.println("\n[Alta de Producto]");
+        System.out.print("Ingrese nombre del producto: ");
+        String nombre = scanner.nextLine();
+        System.out.print("Ingrese descripción: ");
+        String descripcion = scanner.nextLine();
 
-            // ====================================================================
-            // PUNTO 5: Actualizar al menos 2 productos
-            // ====================================================================
+        // CORRECCIÓN: Uso de Double en lugar de BigDecimal
+        System.out.print("Ingrese precio: ");
+        Double precio = Double.parseDouble(scanner.nextLine());
 
-            p1.setPrecio(265000.0);
-            p7.setPrecio(4800.0);
-            em.merge(p1);
-            em.merge(p7);
-            System.out.println("--- Se actualizaron 2 productos ---");
+        System.out.print("Ingrese stock disponible: ");
+        int stock = Integer.parseInt(scanner.nextLine());
 
+        System.out.println("Asigne una Categoría seleccionando de la siguiente lista:");
+        listarCategorias();
+        System.out.print("Ingrese el ID de la categoría elegida: ");
+        Long catId = Long.parseLong(scanner.nextLine());
 
-            // ====================================================================
-            // PUNTO 6: Buscar Usuario por id
-            // ====================================================================
+        Optional<Categoria> catOpt = categoriaRepository.buscarPorId(catId);
+        if (catOpt.isEmpty() || catOpt.get().isEliminado()) {
+            System.out.println("Error: La categoría seleccionada no es válida o está dada de baja. Operación cancelada.");
+            return;
+        }
 
-            Usuario usuarioBuscado = em.find(Usuario.class, usuario1.getId());
-            System.out.println("--- Usuario buscado por ID: " + usuarioBuscado.getNombre() + " " + usuarioBuscado.getApellido() + " ---");
+        Producto nuevo = new Producto();
+        nuevo.setNombre(nombre);
+        nuevo.setDescripcion(descripcion);
+        nuevo.setPrecio(precio);
+        nuevo.setStock(stock);
+        nuevo.setDisponible(true);
 
+        // CORRECCIÓN RELACIÓN: Agregamos el producto a la categoría y guardamos la categoría
+        // (Por el CascadeType.ALL se persistirá el producto automáticamente atado a esta categoría)
+        Categoria cat = catOpt.get();
+        cat.addProducto(nuevo);
+        categoriaRepository.guardar(cat);
 
-            // ====================================================================
-            // PUNTO 7: Buscar Usuario por mail
-            // ====================================================================
+        System.out.println("¡Producto registrado con éxito y asignado a la categoría!");
+    }
 
-            Usuario usuarioPorMail = em.createQuery("SELECT u FROM Usuario u WHERE u.mail = :mail", Usuario.class)
-                    .setParameter("mail", "walter@mail.com")
-                    .getSingleResult();
-            System.out.println("--- Usuario buscado por mail: " + usuarioPorMail.getNombre() + " ---");
+    private static void listarProductos() {
+        System.out.println("\n[Listado de Productos Activos]");
+        List<Producto> activos = productoRepository.listarActivos();
+        if (activos.isEmpty()) {
+            System.out.println("No hay productos activos registrados.");
+        } else {
+            // CORRECCIÓN: Como Producto no tiene getCategoria(), imprimimos solo los datos propios del producto
+            for (Producto prod : activos) {
+                System.out.printf("ID: %d | Nombre: %s | Precio: $%.2f | Stock: %d\n",
+                        prod.getId(), prod.getNombre(), prod.getPrecio(), prod.getStock());
+            }
+        }
+    }
 
+    private static void modificacionProducto() {
+        System.out.println("\n[Modificación de Producto]");
+        System.out.print("Ingrese el ID del producto a modificar: ");
+        Long id = Long.parseLong(scanner.nextLine());
 
-            // ====================================================================
-            // PUNTO 8: Borrar 1 producto
-            // ====================================================================
+        Optional<Producto> opt = productoRepository.buscarPorId(id);
+        if (opt.isEmpty() || opt.get().isEliminado()) {
+            System.out.println("Error: El producto no existe o está dado de baja.");
+            return;
+        }
 
-            em.remove(p10);
-            System.out.println("--- Producto 'Fardo de Leña' eliminado ---");
+        Producto prod = opt.get();
+        System.out.print("Nuevo nombre (actual: " + prod.getNombre() + "): ");
+        String nombre = scanner.nextLine();
+        System.out.print("Nuevo precio (actual: " + prod.getPrecio() + "): ");
+        String precioStr = scanner.nextLine();
+        System.out.print("Nuevo stock (actual: " + prod.getStock() + "): ");
+        String stockStr = scanner.nextLine();
 
+        if (!nombre.trim().isEmpty()) prod.setNombre(nombre);
+        if (!precioStr.trim().isEmpty()) prod.setPrecio(Double.parseDouble(precioStr));
+        if (!stockStr.trim().isEmpty()) prod.setStock(Integer.parseInt(stockStr));
 
-            // Confirmamos la transacción
-            em.getTransaction().commit();
+        productoRepository.guardar(prod);
+        System.out.println("¡Producto actualizado con éxito!");
+    }
 
-        } catch (Exception e) {
-            em.getTransaction().rollback();
-            e.printStackTrace();
-        } finally {
-            em.close();
-            emf.close();
+    private static void bajaProducto() {
+        System.out.println("\n[HU-08: Baja Lógica de Producto]");
+        System.out.print("Ingrese el ID del producto a dar de baja: ");
+        Long id = Long.parseLong(scanner.nextLine());
+
+        Optional<Producto> opt = productoRepository.buscarPorId(id);
+        if (opt.isEmpty() || opt.get().isEliminado()) {
+            System.out.println("Error: El ID no existe o ya está dado de baja.");
+            return;
+        }
+
+        Producto productoAfectado = opt.get();
+        String nombreProducto = productoAfectado.getNombre();
+        productoRepository.eliminarLogico(id);
+        System.out.println("Confirmación: El producto '" + nombreProducto + "' ha sido dado de baja correctamente.");
+    }
+
+    // ==========================================
+    // CUMPLIMIENTO CRITERIOS DE ACEPTACIÓN HU-09
+    // ==========================================
+    private static void reporteProductosPorCategoria() {
+        System.out.println("\n[HU-09: Listar productos de una categoría]");
+
+        System.out.println("Categorías Disponibles:");
+        List<Categoria> categoriasActivas = categoriaRepository.listarActivos();
+        if (categoriasActivas.isEmpty()) {
+            System.out.println("No hay categorías activas disponibles para realizar la consulta.");
+            return;
+        }
+
+        for (Categoria cat : categoriasActivas) {
+            System.out.printf(" [%d] %s\n", cat.getId(), cat.getNombre());
+        }
+
+        System.out.print("Seleccione el ID de la categoría a consultar: ");
+        Long categoriaId = Long.parseLong(scanner.nextLine());
+
+        List<Producto> productosFiltrados = productoRepository.buscarPorCategoria(categoriaId);
+
+        if (productosFiltrados.isEmpty()) {
+            System.out.println("La categoría seleccionada no tiene productos activos vinculados.");
+        } else {
+            System.out.println("\nProductos encontrados para la categoría elegida:");
+            System.out.println("------------------------------------------------------------");
+            for (Producto p : productosFiltrados) {
+                System.out.printf("ID: %-4d | Nombre: %-20s | Precio: $%-8.2f | Stock: %-4d\n",
+                        p.getId(), p.getNombre(), p.getPrecio(), p.getStock());
+            }
+            System.out.println("------------------------------------------------------------");
         }
     }
 }

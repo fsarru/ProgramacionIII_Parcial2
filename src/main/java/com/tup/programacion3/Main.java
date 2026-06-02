@@ -175,11 +175,8 @@ public class Main {
         String nombre = scanner.nextLine();
         System.out.print("Ingrese descripción: ");
         String descripcion = scanner.nextLine();
-
-        // CORRECCIÓN: Uso de Double en lugar de BigDecimal
         System.out.print("Ingrese precio: ");
         Double precio = Double.parseDouble(scanner.nextLine());
-
         System.out.print("Ingrese stock disponible: ");
         int stock = Integer.parseInt(scanner.nextLine());
 
@@ -199,12 +196,16 @@ public class Main {
         nuevo.setDescripcion(descripcion);
         nuevo.setPrecio(precio);
         nuevo.setStock(stock);
-        nuevo.setDisponible(true);
 
-        // CORRECCIÓN RELACIÓN: Agregamos el producto a la categoría y guardamos la categoría
-        // (Por el CascadeType.ALL se persistirá el producto automáticamente atado a esta categoría)
+        // SOLUCIÓN AL ERROR:
+        // 1. Guardamos PRIMERO el producto solo, para que la BD le asigne un ID y deje de ser un objeto "transitorio".
+        nuevo = productoRepository.guardar(nuevo);
+
+        // 2. Una vez guardado, obtenemos la categoría, le inyectamos el producto usando su Set nativo y la actualizamos.
         Categoria cat = catOpt.get();
-        cat.addProducto(nuevo);
+        if (cat.getProductos() != null) {
+            cat.getProductos().add(nuevo);
+        }
         categoriaRepository.guardar(cat);
 
         System.out.println("¡Producto registrado con éxito y asignado a la categoría!");

@@ -207,7 +207,6 @@ public class Main {
         if (activos.isEmpty()) {
             System.out.println("No hay productos activos registrados.");
         } else {
-            // CORRECCIÓN: Como Producto no tiene getCategoria(), imprimimos solo los datos propios del producto
             for (Producto prod : activos) {
                 System.out.printf("ID: %d | Nombre: %s | Precio: $%.2f | Stock: %d\n",
                         prod.getId(), prod.getNombre(), prod.getPrecio(), prod.getStock());

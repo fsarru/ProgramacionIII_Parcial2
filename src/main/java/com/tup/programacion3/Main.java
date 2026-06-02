@@ -185,30 +185,20 @@ public class Main {
         System.out.print("Ingrese el ID de la categoría elegida: ");
         Long catId = Long.parseLong(scanner.nextLine());
 
-        Optional<Categoria> catOpt = categoriaRepository.buscarPorId(catId);
-        if (catOpt.isEmpty() || catOpt.get().isEliminado()) {
-            System.out.println("Error: La categoría seleccionada no es válida o está dada de baja. Operación cancelada.");
-            return;
-        }
-
         Producto nuevo = new Producto();
         nuevo.setNombre(nombre);
         nuevo.setDescripcion(descripcion);
         nuevo.setPrecio(precio);
         nuevo.setStock(stock);
+        nuevo.setDisponible(true); // Opcional: setealo en true si tu TP base lo requiere
 
-        // SOLUCIÓN AL ERROR:
-        // 1. Guardamos PRIMERO el producto solo, para que la BD le asigne un ID y deje de ser un objeto "transitorio".
-        nuevo = productoRepository.guardar(nuevo);
+        boolean exito = categoriaRepository.agregarProductoACategoria(catId, nuevo);
 
-        // 2. Una vez guardado, obtenemos la categoría, le inyectamos el producto usando su Set nativo y la actualizamos.
-        Categoria cat = catOpt.get();
-        if (cat.getProductos() != null) {
-            cat.getProductos().add(nuevo);
+        if (exito) {
+            System.out.println("¡Producto registrado con éxito y asignado a la categoría!");
+        } else {
+            System.out.println("Error: La categoría seleccionada no es válida o está dada de baja. Operación cancelada.");
         }
-        categoriaRepository.guardar(cat);
-
-        System.out.println("¡Producto registrado con éxito y asignado a la categoría!");
     }
 
     private static void listarProductos() {
